@@ -47,7 +47,7 @@ public class ConnectionS {
             fichero = new Byte[length];
             System.out.println("Tamano del fichero: " + fichero.length);
             while (true) {
-                if (inicioBloque < length) {
+                if (inicioBloque < (length-1000)) {
                     for (int i = inicioBloque; i < inicioBloque + 1000; i++) {
                         fichero[i] = dis.readByte();
                     }
@@ -60,7 +60,7 @@ public class ConnectionS {
                     break;
                 }                
             }
-            System.out.println("Todo se ha recibido: " + inicioBloque);
+            System.out.println("Todo se ha recibido: " + fichero.length);
             dos.writeUTF("Recibidos correctamente: " + inicioBloque);
 
         } catch (IOException ex) {
