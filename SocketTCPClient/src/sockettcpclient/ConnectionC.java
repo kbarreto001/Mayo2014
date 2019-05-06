@@ -48,7 +48,7 @@ class ConnectionC {
         try {
             dos.writeInt(lengthFichero);
             while (true) {
-                if (inicioBloque < lengthFichero) {
+                if (inicioBloque < (lengthFichero-1000)) {
                     for (int i = inicioBloque; i < inicioBloque + 1000; i++) {
                         dos.writeByte(fichero[i]);
                     }
