@@ -2,71 +2,78 @@ package sockettcpserver;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.util.Objects;
 
 public class ConnectionS {
 
-    public static void connection() {
-        int counter = 1, size = 1000;
-        ServerSocket server;
-        Socket connection;
-        DataOutputStream dos;
-        DataInputStream dis;
-        Byte[] fichero = new Byte[1000];
+    public void connection(DataInputStream disSocket, DataOutputStream dosSocket) {
+        Byte[] fichero;
+        Algoritmo otro = new Algoritmo();
         try {
-            server = new ServerSocket(5000, size);
-            while (true) {
-                connection = server.accept();
-                System.out.println("concexion: " + counter + " received from: " + connection.getInetAddress().getHostName());
-                dos = new DataOutputStream(connection.getOutputStream());
-                dis = new DataInputStream(connection.getInputStream());
-
-                fichero = RecibirFichero(dis, dos);
-                System.out.println(fichero[60]);
-
-                connection.close();
-                dos.close();
-                dis.close();
-                counter++;
-            }
+            fichero = RecibirFichero(disSocket, dosSocket);            
+            enviarFichero(otro.Decodificar(fichero),dosSocket,disSocket);
         } catch (IOException ex) {
             System.out.println("Error: " + ex.getLocalizedMessage());
         }
     }
 
-    public static Byte[] RecibirFichero(DataInputStream dis, DataOutputStream dos) throws IOException {
+    public Byte[] RecibirFichero(DataInputStream disSocket, DataOutputStream dosSocket) throws IOException {
         Byte[] fichero = null;
-        int length, inicioBloque = 0;
+        int length, inicioBloque = 0,k=0;
         try {
-            length = dis.readInt();
+            length = disSocket.readInt();
             fichero = new Byte[length];
-            System.out.println("Tamano del fichero: " + fichero.length);
             while (true) {
-                if (inicioBloque < (length-1000)) {
+                if (inicioBloque < (length - 1000)) {
                     for (int i = inicioBloque; i < inicioBloque + 1000; i++) {
-                        fichero[i] = dis.readByte();
+                        fichero[i] = disSocket.readByte();
                     }
                     inicioBloque = inicioBloque + 1000;
-                    dos.writeUTF("Recibidos correctamente: " + inicioBloque);
+                    dosSocket.writeUTF("Recibidos correctamente: " + inicioBloque);
                 } else {
                     for (int j = inicioBloque; j < length; j++) {
-                        fichero[j] = dis.readByte();
+                        fichero[j] = disSocket.readByte();
+                        k++;
                     }
                     break;
-                }                
+                }
             }
             System.out.println("Todo se ha recibido: " + fichero.length);
-            dos.writeUTF("Recibidos correctamente: " + inicioBloque);
-
+            dosSocket.writeByte(fichero[length - 1]);
         } catch (IOException ex) {
             System.out.println("Error: 1" + ex.getLocalizedMessage());
         }
         return fichero;
     }
 
+    public void enviarFichero(Byte[] fichero, DataOutputStream dosSocket, DataInputStream disSocket) throws IOException {
+        int lengthFichero = fichero.length;
+        int inicioBloque = 0;
+        Byte comprobacion;
+        try {
+            dosSocket.writeInt(lengthFichero);
+            while (true) {
+                if (inicioBloque < (lengthFichero - 1000)) {
+                    for (int i = inicioBloque; i < inicioBloque + 1000; i++) {
+                        dosSocket.writeByte(fichero[i]);
+                    }
+                    inicioBloque = inicioBloque + 1000;
+                    System.out.println(disSocket.readUTF());
+                } else {
+                    for (int j = inicioBloque; j < lengthFichero; j++) {
+                        dosSocket.writeByte(fichero[j]);
+                    }
+                    break;
+                }
+            }
+            if (Objects.equals(comprobacion = disSocket.readByte(), fichero[lengthFichero - 1])) {
+                System.out.println("Todo se ha enviado");
+            } else {
+                System.out.println("No se envio completamente");
+            }
+        } catch (IOException ex) {
+            System.out.println("Error: " + ex.getLocalizedMessage());
+        }
+    }
 }
